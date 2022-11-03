@@ -119,7 +119,7 @@ div(:class="styles.IndexTable")
             div(:class="stickyColumnHeaderClassNames")
               div(
                 :class="styles.TableHeading",
-                :key="headings[0].title",
+                :key="getHeadingKey(headings[0])",
                 :style="stickyColumnHeaderStyle",
                 data-index-table-sticky-heading="true",
               )
@@ -174,7 +174,7 @@ div(:class="styles.IndexTable")
             )
               div(
                 v-for="heading, index in headings",
-                :key="heading.title",
+                :key="getHeadingKey(heading)",
                 :class="stickyHeadingClassName(index)",
                 :style="renderStickyHeading(index)",
                 data-index-table-sticky-heading="true",
@@ -205,7 +205,7 @@ div(:class="styles.IndexTable")
           tr
             template(
               v-for="heading, index in headings",
-              :key="`${heading.title}-${index}`",
+              :key="getHeadingKey(heading)",
             )
               th(
                 v-if="index === 0 && selectable",
@@ -265,7 +265,7 @@ div(
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, useSlots } from 'vue';
 import { debounce } from 'polaris/polaris-react/src/utilities/debounce';
-import { classNames } from 'polaris/polaris-react/src/utilities/css';
+import { classNames } from '@/utilities/css';
 import EnableSelectionMinor from '@icons/EnableSelectionMinor.svg';
 import { tokens, motion, toPx } from '@shopify/polaris-tokens';
 import { UseI18n } from '@/use';
@@ -290,7 +290,7 @@ import type { BulkActionsProps } from '../BulkActions/utils';
 import { ScrollContainer } from './components';
 import { HeadingContentWrapper } from './children';
 import { getTableHeadingsBySelector } from './utils';
-import type { IndexTableHeading, IndexTableSortDirection } from './utils';
+import type { IndexTableHeading, IndexTableSortDirection, IndexTableSortToggleLabels } from './utils';
 import styles from '@/classes/IndexTable.json';
 
 interface IndexTableBaseProps {
@@ -303,6 +303,7 @@ interface IndexTableBaseProps {
   defaultSortDirection?: IndexTableSortDirection;
   sortDirection?: IndexTableSortDirection;
   sortColumnIndex?: number;
+  sortToggleLabels?: IndexTableSortToggleLabels;
 }
 
 interface TableHeadingRect {
@@ -311,7 +312,6 @@ interface TableHeadingRect {
 }
 
 const SCROLL_BAR_PADDING = 4;
-const SIXTY_FPS = 1000 / 60;
 const SCROLL_BAR_DEBOUNCE_PERIOD = 300;
 
 const props = withDefaults(defineProps<IndexTableBaseProps>(), {
@@ -366,6 +366,7 @@ const isSmallScreenSelectable = ref(false);
 const stickyWrapper = ref<HTMLElement | null>(null);
 const hideScrollContainer = ref(false);
 const smallScreen = ref(isBreakpointsXS());
+const canFitStickyColumn = ref(true);
 
 const tableHeadings = ref<HTMLElement[]>([]);
 const stickyTableHeadings = ref<HTMLElement[]>([]);
@@ -384,6 +385,34 @@ const scrollContainerRef = computed(() => {
   return scrollableContainerElement.value
     && scrollableContainerElement.value.scrollableContainerRef;
 });
+
+const handleCanFitStickyColumn = () => {
+  if (!scrollableContainerElement.value || !tableHeadings.value.length) {
+    return;
+  }
+  const scrollableRect =
+    (scrollableContainerElement.value as any).getBoundingClientRect();
+  const checkboxColumnWidth = selectable
+    ? tableHeadings.value[0].getBoundingClientRect().width
+    : 0;
+  const firstStickyColumnWidth =
+    tableHeadings.value[selectable ? 1 : 0].getBoundingClientRect().width;
+  const lastColumnIsNotTheFirst = selectable
+    ? tableHeadings.value.length > 2
+    : 1;
+  // Don't consider the last column in the calculations if it's not sticky
+  const lastStickyColumnWidth =
+    props.lastColumnSticky && lastColumnIsNotTheFirst
+      ? tableHeadings.value[
+        tableHeadings.value.length - 1
+      ].getBoundingClientRect().width
+      : 0;
+  // Secure some space for the remaining columns to be visible
+  const restOfContentMinWidth = 100;
+
+  canFitStickyColumn.value = scrollableRect.width >
+    firstStickyColumnWidth + checkboxColumnWidth + lastStickyColumnWidth + restOfContentMinWidth;
+};
 
 const tableBodyRef = (node) => {
   if (node !== null && !tableInitialized.value) {
@@ -466,8 +495,6 @@ const resizeTableHeadings = debounce(
       heading.style.minWidth = `${minWidth}px`;
     });
   },
-  SIXTY_FPS,
-  {leading: true, trailing: true, maxWait: SIXTY_FPS},
 );
 
 const resizeTableScrollBar = () => {
@@ -489,7 +516,7 @@ const debounceResizeTableScrollbar = () => debounce(
   },
 );
 
-const handleCanScrollRight = () => {
+const handleCanScrollRight = debounce(() => {
   if (
     !props.lastColumnSticky ||
     !tableElement.value ||
@@ -502,11 +529,10 @@ const handleCanScrollRight = () => {
   const scrollableRect = scrollContainerRef.value.getBoundingClientRect();
 
   canScrollRight.value = tableRect.width > scrollableRect.width;
-};
+});
 
 const handleIsSmallScreen = () => {
-  // Somehow, Shopify dev makes a stupid here, wth is this...
-  // setSmallScreen(smallScreen);
+  smallScreen.value = isBreakpointsXS();
 };
 
 const handleResize = () => {
@@ -520,6 +546,7 @@ const handleResize = () => {
   debounceResizeTableScrollbar();
   handleCanScrollRight();
   handleIsSmallScreen();
+  handleCanFitStickyColumn();
 };
 
 const handleScrollContainerScroll = (canScrollLeft, tmpCanScrollRight) => {
@@ -620,6 +647,11 @@ watch(
   checkIsSmallScreenSelectable,
 );
 
+watch(
+  () => [tableInitialized.value],
+  handleCanFitStickyColumn,
+)
+
 const hasBulkActions = computed(() => Boolean(
   (props.promotedBulkActions && props.promotedBulkActions.length > 0) ||
     (props.bulkActions && props.bulkActions.length > 0),
@@ -632,7 +664,7 @@ const bulkActionsSelectable = computed(() => Boolean(
 
 const selectedItemsCountLabel = computed(() =>
   selectedItemsCount.value === SELECT_ALL_ITEMS
-    ? `${itemCount}+`
+    ? `${itemCount.value}+`
     : selectedItemsCount.value,
 );
 
@@ -694,14 +726,14 @@ const bulkActionLabel = computed(() => {
 });
 
 const paginatedSelectAllAction = computed(() => {
-  if (!selectable?.value || !hasBulkActions.value || !hasMoreItems) {
+  if (!selectable?.value || !hasBulkActions.value || !hasMoreItems?.value) {
     return;
   }
 
   const customActionText =
     props.paginatedSelectAllActionText ??
     i18n.translate('Polaris.IndexTable.selectAllItems', {
-      itemsLength: itemCount,
+      itemsLength: itemCount.value,
       resourceNamePlural: resourceName.plural.toLocaleLowerCase(),
     });
 
@@ -736,14 +768,20 @@ const scrollBarClassNames = computed(() => classNames(
   tableElement.value && tableInitialized && styles.ScrollBarContent,
 ));
 
+const isSortable = computed(() => props.sortable?.some((value) => value));
+
 const tableClassNames = computed(() => classNames(
   styles.Table,
   hasMoreLeftColumns.value && styles['Table-scrolling'],
   selectMode.value && styles.disableTextSelection,
   selectMode.value && shouldShowBulkActions.value && styles.selectMode,
   !selectable?.value && styles['Table-unselectable'],
-  props.lastColumnSticky && styles['Table-sticky-last'],
-  props.lastColumnSticky && canScrollRight && styles['Table-sticky-scrolling'],
+  canFitStickyColumn.value && props.lastColumnSticky && styles['Table-sticky-last'],
+  canFitStickyColumn.value && styles['Table-sticky'],
+  isSortable.value && styles['Table-sortable'],
+  canFitStickyColumn.value &&
+    props.lastColumnSticky &&
+    canScrollRight.value && styles['Table-sticky-scrolling'],
 ));
 
 const handleSelectModeToggle = (val: boolean) => {
@@ -767,6 +805,18 @@ const headingContentClassName = (heading: IndexTableHeading, index: number) => {
   );
 };
 
+const getHeadingKey = (heading: IndexTableHeading): string => {
+  if (heading.id) {
+    return heading.id;
+  }
+
+  if (typeof heading.title === 'string') {
+    return heading.title;
+  }
+
+  return '';
+}
+
 const stickyPositioningStyle = (index: number) => {
   return selectable?.value !== false &&
   isSecond(index) &&
@@ -779,6 +829,7 @@ const stickyPositioningStyle = (index: number) => {
 const checkboxClassName = (index: number) => {
   return classNames(
     styles.TableHeading,
+    props.sortable?.some((value) => value === true) && styles['TableHeading-sortable'],
     index === 0 && styles['TableHeading-first'],
   );
 };

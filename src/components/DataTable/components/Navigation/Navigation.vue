@@ -12,7 +12,7 @@ div(:class="styles.Navigation", :ref="setRef")
     :key="`pip-${index}`",
   )
     div(
-      v-if="!fixedFirstColumn || index",
+      v-if="fixedFirstColumns <= index",
       :class="classNames(styles.Pip, column.isVisible && styles['Pip-visible'])",
     )
   Button(
@@ -25,7 +25,7 @@ div(:class="styles.Navigation", :ref="setRef")
 </template>
 
 <script setup lang="ts">
-import { classNames } from 'polaris/polaris-react/src/utilities/css';
+import { classNames } from '@/utilities/css';
 import { UseI18n } from '@/use';
 import { Button } from '@/components';
 import ChevronLeftMinor from '@icons/ChevronLeftMinor.svg';
@@ -38,7 +38,7 @@ interface NavigationProps {
   columnVisibilityData: ColumnVisibilityData[];
   isScrolledFarthestLeft?: boolean;
   isScrolledFarthestRight?: boolean;
-  fixedFirstColumn?: boolean;
+  fixedFirstColumns: number;
   setRef?: (ref: any) => void;
 }
 

@@ -1,13 +1,12 @@
 <template lang="pug">
 div(:class="styles.FormLayout")
   template(
-    v-if="slotsElms.length",
+    v-if="!noItemWrap && slotsElms.length",
     v-for="(item, index) in slotsElms",
   )
     Item(
       v-if="!itemGroupIndexes[index]",
       :key="index",
-      :class="styles.Item",
     )
       component(
         :is="item",
@@ -24,8 +23,18 @@ div(:class="styles.FormLayout")
 <script setup lang="ts">
 import { computed, onBeforeUpdate, onMounted, ref, useSlots } from 'vue';
 import type { VNodeArrayChildren } from 'vue';
+import { extractElement } from '@/utilities/extract-fragment';
 import styles from '@/classes/FormLayout.json';
 import { Item } from './components';
+
+interface Props {
+  /** No wrap all stack elements with FormItem  */
+  noItemWrap?: boolean;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  noItemWrap: false,
+});
 
 const itemRefs = ref<any[]>([]);
 
@@ -34,24 +43,15 @@ const itemGroupIndexes = ref<boolean[]>([]);
 const slots = useSlots();
 
 const slotsElms = computed(() => {
-  const items : VNodeArrayChildren = [];
+  let elms : VNodeArrayChildren = [];
   if (slots.default) {
-    slots.default().map(item => {
-      const children = item.children as VNodeArrayChildren;
-      if (typeof children === 'string' && children === 'v-if') {
-        return;
-      }
-
-      if (item.type.toString() === 'Symbol(Fragment)' || item.type.toString() === 'Symbol()') {
-        for (const child of children) {
-          items.push(child);
-        }
-      } else {
-        items.push(item);
-      }
+    const groups = slots.default().map(group => {
+      return extractElement(group);
     });
+    elms = groups.flat();
   }
-  return items;
+
+  return elms;
 });
 
 onBeforeUpdate(() => {

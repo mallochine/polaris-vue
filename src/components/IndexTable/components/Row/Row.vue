@@ -6,7 +6,7 @@ component(
   @mouseenter="setHoverIn",
   @mouseleave="setHoverOut",
   @click="handleRowClick",
-  ref="tableRowCallbackRef",
+  ref="tableRowRef",
 )
   Checkbox(v-if="selectable")
   slot
@@ -14,8 +14,8 @@ component(
 
 <script setup lang="ts">
 import type { ComputedRef, Ref } from 'vue';
-import { ref, computed, useAttrs, provide } from 'vue';
-import { classNames, variationName } from 'polaris/polaris-react/src/utilities/css';
+import { ref, computed, useAttrs, provide, onMounted } from 'vue';
+import { classNames, variationName } from '@/utilities/css';
 import {
   useIndexRow,
   useIndexSelectionChange,
@@ -65,6 +65,7 @@ const contextValue = computed<RowContextType>(() => {
     itemId: props.id,
     selected: props.selected,
     disabled: props.disabled,
+    position: props.position,
     onInteraction: handleInteraction,
   } as RowContextType;
 });
@@ -82,14 +83,6 @@ const handleInteraction = (event: MouseEvent | KeyboardEvent) => {
 
   onSelectionChange(selectionType, !props.selected, props.id, props.position);
 };
-
-const tableRowCallbackRef = () => {
-  const el = tableRowRef.value?.querySelector('[data-primary-link]');
-
-  if (el) {
-    primaryLinkElement.value = el as HTMLAnchorElement;
-  }
-}
 
 const rowClassName = computed(() => classNames(
   styles.TableRow,
@@ -148,6 +141,14 @@ const handleRowClick = (event: Event) => {
     handleInteraction(event as any);
   }
 };
+
+onMounted(() => {
+  const el = tableRowRef.value?.querySelector('[data-primary-link]');
+
+  if (el) {
+    primaryLinkElement.value = el as HTMLAnchorElement;
+  }
+});
 
 provide<ComputedRef<RowContextType>>('RowContext', contextValue);
 provide<(Ref<boolean>) | undefined>('RowHoveredContext', hovered);

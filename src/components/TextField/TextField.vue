@@ -167,7 +167,7 @@ Labelled(
 
 <script setup lang="ts">
 import { useSlots, ref, computed, watch } from 'vue';
-import { classNames, variationName } from 'polaris/polaris-react/src/utilities/css';
+import { classNames, variationName } from '@/utilities/css';
 import { UseUniqueId } from '@/use';
 import styles from '@/classes/TextField.json';
 import CircleCancelMinor from '@icons/CircleCancelMinor.svg';
@@ -298,6 +298,7 @@ const i18n = UseI18n();
 
 const props = withDefaults(defineProps<NonMutuallyExclusiveProps>(), {
   type: 'text',
+  autoComplete: 'off',
 });
 
 const emits = defineEmits<{
@@ -498,6 +499,16 @@ const isPrefixOrSuffix = (target: HTMLElement | EventTarget) => {
 const handleClick = (event: Event): void => {
   const target = event.target as HTMLInputElement;
 
+  // For TextFields used with Combobox, focus needs to be set again even
+  // if the TextField is already focused to trigger the logic to open the
+  // Combobox activator
+  const inputRefRole = inputRef.value?.getAttribute('role');
+  if (target === inputRef.value && inputRefRole === 'combobox') {
+    inputRef.value?.focus();
+    handleOnFocus(event as FocusEvent);
+    return;
+  }
+
   if (
     isPrefixOrSuffix(target) ||
     isVerticalContent(target) ||
@@ -510,7 +521,6 @@ const handleClick = (event: Event): void => {
 
   inputRef.value?.focus();
 };
-
 
 const handleChange = (event: Event) => {
   const target = event.target as HTMLInputElement;

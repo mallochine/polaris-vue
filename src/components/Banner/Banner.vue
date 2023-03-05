@@ -8,8 +8,6 @@ div(
   @mouseup="handleMouseUp",
   @keyup="handleKeyUp",
   @blur="handleBlur",
-  :aria-labelledby="headingID",
-  :aria-describedby="contentID",
 )
   div(
     v-if="attrs.onDismiss",
@@ -22,25 +20,28 @@ div(
       accessibilityLabel="Dismiss notification",
     )
 
-  div(:class="styles.Ribbon")
+  Box(
+    v-if="!hideIcon",
+    padding-inline-end="4",
+  )
     Icon(:source="iconName", :color="iconColor")
 
   div(:class="styles.ContentWrapper")
-    div(
-      :class="styles.Heading",
-      :id="headingID",
-    )
-      Text(as="p", variant="headingMd") {{ title }}
+    Text(as="h2", variant="headingMd") {{ title }}
 
-    div(
+    Box(
       v-if="hasSlot(slots.default) || action || secondaryAction",
-      :class="styles.Content",
-      :id="contentID",
+      padding-block-start="05",
+      padding-block-end="05",
     )
       slot
-      div(v-if="action || secondaryAction", :class="styles.Actions")
+      Box(
+        v-if="action || secondaryAction",
+        :padding-block-start="withinContentContainer ? '3' : '4'",
+        :padding-block-end="withinContentContainer ? '1' : undefined",
+      )
         ButtonGroup
-          div(v-if="action", :class="styles.PrimaryAction")
+          Box(v-if="action", padding-inline-end="2")
             button(
               v-if="action.loading",
               disabled,
@@ -56,7 +57,7 @@ div(
             UnstyledButtonFrom(
               v-else,
               :action="action",
-              :class="styles.Button",
+              :class="`${styles.Button} ${styles.PrimaryAction}`",
             )
           template(v-if="secondaryAction")
             UnstyledLink(
@@ -77,13 +78,13 @@ div(
 <script setup lang="ts">
 import { inject, ref, computed, useAttrs, provide, useSlots } from 'vue';
 import { classNames, variationName } from '@/utilities/css';
-import { UseUniqueId } from '@/use';
 import type { Action } from '@/utilities/type';
 import type { DisableableAction, LoadableAction } from '@/utilities/interface';
 import { hasSlot } from '@/utilities/has-slot';
 import { UseI18n } from '@/use';
 
 import {
+  Box,
   Button,
   ButtonGroup,
   Icon,
@@ -114,8 +115,10 @@ interface BannerAttributes {
 interface BannerProps {
   /** Title content for the banner. */
   title?: string;
-  /** Icon to display in the banner. Use only major, duotone icons */
+  /** Status icon to display in the banner. Use only major icons */
   icon?: IconProps['source'];
+  /** Renders the banner without a status icon. */
+  hideIcon?: boolean;
   /** Sets the status of the banner. */
   status?: BannerStatus;
   /** Action for banner */
@@ -131,12 +134,6 @@ const i18n = UseI18n();
 
 const withinContentContainer = inject('WithinContentContext', false);
 provide('BannerContext', false);
-
-const { useUniqueId } = UseUniqueId();
-const id = useUniqueId('Banner');
-
-const headingID = computed(() => `${id}Heading`);
-const contentID = computed(() => `${id}Content`);
 
 const attrs = useAttrs();
 const slots = useSlots();

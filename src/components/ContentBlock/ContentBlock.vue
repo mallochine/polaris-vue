@@ -20,6 +20,3 @@ const props = defineProps<Props>();
 const className = computed(() => classNames(styles.ContentBlock, styles[props.width]));
 </script>
 
-<style lang="scss">
-@import 'polaris/polaris-react/src/components/ContentBlock/ContentBlock.scss';
-</style>

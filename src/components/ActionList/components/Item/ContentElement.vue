@@ -1,5 +1,5 @@
 <template lang="pug">
-span(:class="styles.Content")
+Inline(block-align="center")
   span(v-if="prefixId", :class="styles.Prefix")
     slot(name="prefix")
   span(v-else-if="icon", :class="styles.Prefix")
@@ -11,17 +11,15 @@ span(:class="styles.Content")
     :style="{backgroundImage: `url(${image}`}"
   )
   span(:class="styles.Text")
-    span(
-      v-if="helpText",
-      :class="styles.ContentBlock"
-    )
-      span(:class="styles.ContentBlockInner") {{ contentText }}
+    template(v-if="helpText")
+      Box {{ contentText }}
       Text(variant="bodyMd", color="subdued", as="span") {{ helpText }}
     template(v-else) {{ contentText }}
   span(v-if="badge", :class="styles.Suffix")
     Badge(:status="badge.status") {{ badge.content }}
-  span(v-if="suffixId", :class="styles.Suffix")
-    slot(name="suffix")
+  Box(v-if="suffixId", padding-inline-start="4")
+    span(:class="styles.Suffix")
+      slot(name="suffix")
 </template>
 
 <script lang="ts">
@@ -32,7 +30,7 @@ export default {
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { Text, Icon, Badge } from '@/components';
+import { Text, Icon, Badge, Inline, Box } from '@/components';
 import styles from '@/classes/ActionList.json';
 import type { IconSource } from '@/utilities/type';
 

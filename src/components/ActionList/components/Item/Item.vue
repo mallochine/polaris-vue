@@ -42,8 +42,7 @@ export default {
 <script setup lang="ts">
 import { computed } from 'vue';
 import { classNames } from '@/utilities/css';
-import { ScrollTo } from '@/components/Scrollable';
-import { UnstyledLink } from '@/components/UnstyledLink';
+import { ScrollTo, UnstyledLink } from '@/components';
 import styles from '@/classes/ActionList.json';
 import { handleMouseUpByBlurring } from '@/utilities/focus';
 import ContentElement from './ContentElement.vue';

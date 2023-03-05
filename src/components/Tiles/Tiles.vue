@@ -53,6 +53,3 @@ function formatColumns(columns?: number | string) {
 }
 </script>
 
-<style lang="scss">
-@import 'polaris/polaris-react/src/components/Tiles/Tiles.scss';
-</style>

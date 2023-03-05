@@ -11,7 +11,12 @@ component(
 
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { classNames } from '@/utilities/css';
+import {
+  getResponsiveProps,
+  classNames,
+} from '@/utilities/css';
+
+import type { ResponsiveProp } from '@/utilities/css';
 
 import type {
   ColorsActionTokenAlias,
@@ -26,9 +31,10 @@ import type {
 
 import styles from '@/classes/Box.json';
 
-type Element = 'div' | 'span' | 'section';
+type Element = 'div' | 'span' | 'section' | 'legend' | 'ul' | 'li';
 
 type Overflow = 'hidden' | 'scroll';
+type Position = 'relative' | 'absolute' | 'fixed' | 'sticky';
 
 type ColorTokenScale =
   | 'text'
@@ -54,12 +60,7 @@ type BorderTokenAlias =
   | 'divider-on-dark'
   | 'transparent';
 
-interface Border {
-  blockStart: BorderTokenAlias;
-  blockEnd: BorderTokenAlias;
-  inlineStart: BorderTokenAlias;
-  inlineEnd: BorderTokenAlias;
-}
+type Spacing = ResponsiveProp<SpacingSpaceScale>;
 
 type BorderRadiusTokenScale =
   | '05'
@@ -69,9 +70,7 @@ type BorderRadiusTokenScale =
   | '4'
   | '5'
   | '6'
-  | 'base'
-  | 'large'
-  | 'half';
+  | 'full';
 
 type BackgroundColors =
   | ColorsBackdropTokenAlias
@@ -79,27 +78,6 @@ type BackgroundColors =
   | ColorsOverlayTokenAlias
   | ColorsActionTokenAlias
   | ColorsSurfaceTokenAlias;
-
-interface BorderRadius {
-  startStart: BorderRadiusTokenScale;
-  startEnd: BorderRadiusTokenScale;
-  endStart: BorderRadiusTokenScale;
-  endEnd: BorderRadiusTokenScale;
-}
-
-interface Spacing {
-  blockStart: SpacingSpaceScale;
-  blockEnd: SpacingSpaceScale;
-  inlineStart: SpacingSpaceScale;
-  inlineEnd: SpacingSpaceScale;
-}
-
-interface BorderWidth {
-  blockStart: ShapeBorderWidthScale;
-  blockEnd: ShapeBorderWidthScale;
-  inlineStart: ShapeBorderWidthScale;
-  inlineEnd: ShapeBorderWidthScale;
-}
 
 interface Props {
   /** HTML Element type */
@@ -124,7 +102,7 @@ interface Props {
   borderRadiusEndEnd?: BorderRadiusTokenScale;
   /** Vertical start horizontal start border radius */
   borderRadiusStartStart?: BorderRadiusTokenScale;
-  /** Verital start horizontal end border radius */
+  /** Vertical start horizontal end border radius */
   borderRadiusStartEnd?: BorderRadiusTokenScale;
   /** Border width */
   borderWidth?: ShapeBorderWidthScale;
@@ -140,131 +118,175 @@ interface Props {
   color?: ColorTokenScale;
   /** HTML id attribute */
   id?: string;
-  /** Set minimum height of container */
+  /** Minimum height of container */
   minHeight?: string;
-  /** Set minimum width of container */
+  /** Minimum width of container */
   minWidth?: string;
-  /** Set maximum width of container */
+  /** Maximum width of container */
   maxWidth?: string;
   /** Clip horizontal content of children */
   overflowX?: Overflow;
   /** Clip vertical content of children */
   overflowY?: Overflow;
-  /** Spacing around children */
-  padding?: SpacingSpaceScale;
-  /** Vertical start spacing around children */
-  paddingBlockStart?: SpacingSpaceScale;
-  /** Vertical end spacing around children */
-  paddingBlockEnd?: SpacingSpaceScale;
-  /** Horizontal start spacing around children */
-  paddingInlineStart?: SpacingSpaceScale;
-  /** Horizontal end spacing around children */
-  paddingInlineEnd?: SpacingSpaceScale;
-  /** Shadow */
+  /** Spacing around children. Accepts a spacing token or an object of spacing tokens for different screen sizes.
+   * @example
+   * padding='4'
+   * padding={{xs: '2', sm: '3', md: '4', lg: '5', xl: '6'}}
+   */
+   padding?: Spacing;
+  /** Vertical start spacing around children. Accepts a spacing token or an object of spacing tokens for different screen sizes.
+   * @example
+   * paddingBlockStart='4'
+   * paddingBlockStart={{xs: '2', sm: '3', md: '4', lg: '5', xl: '6'}}
+   */
+  paddingBlockStart?: Spacing;
+  /** Vertical end spacing around children. Accepts a spacing token or an object of spacing tokens for different screen sizes.
+   * @example
+   * paddingBlockEnd='4'
+   * paddingBlockEnd={{xs: '2', sm: '3', md: '4', lg: '5', xl: '6'}}
+   */
+  paddingBlockEnd?: Spacing;
+  /** Horizontal start spacing around children. Accepts a spacing token or an object of spacing tokens for different screen sizes.
+   * @example
+   * paddingInlineStart='4'
+   * paddingInlineStart={{xs: '2', sm: '3', md: '4', lg: '5', xl: '6'}}
+   */
+  paddingInlineStart?: Spacing;
+  /** Horizontal end spacing around children. Accepts a spacing token or an object of spacing tokens for different screen sizes.
+   * @example
+   * paddingInlineEnd='4'
+   * paddingInlineEnd={{xs: '2', sm: '3', md: '4', lg: '5', xl: '6'}}
+   */
+  paddingInlineEnd?: Spacing;
+  /** Aria role */
+  role?: 'status' | 'presentation' | 'menu' | 'listbox' | 'combobox';
+  /** Shadow on box */
   shadow?: DepthShadowAlias;
-  /** Set width of container */
+  /** Set tab order */
+  tabIndex?: number;
+  /** Width of container */
   width?: string;
+  // These could be moved to new layout component(s) in the future
+  /** Position of box */
+  position?: Position;
+  /** Top position of box */
+  insetBlockStart?: Spacing;
+  /** Bottom position of box */
+  insetBlockEnd?: Spacing;
+  /** Left position of box */
+  insetInlineStart?: Spacing;
+  /** Right position of box */
+  insetInlineEnd?: Spacing;
+  /** Opacity of box */
+  opacity?: string;
+  /** Outline style */
+  outline?: BorderTokenAlias;
+  /** Visually hide the contents during print */
+  printHidden?: boolean;
+  /** Visually hide the contents (still announced by screenreader) */
+  visuallyHidden?: boolean;
+  /** z-index of box */
+  zIndex?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   as: 'div',
 });
 
-const borders = computed(() => ({
-  blockEnd: props.borderBlockEnd,
-  inlineStart: props.borderInlineStart,
-  inlineEnd: props.borderInlineEnd,
-  blockStart: props.borderBlockStart,
-} as Border));
-
-const borderRadiuses = computed(() => ({
-  endStart: props.borderRadiusEndStart,
-  endEnd: props.borderRadiusEndEnd,
-  startStart: props.borderRadiusStartStart,
-  startEnd: props.borderRadiusStartEnd,
-} as BorderRadius));
-
-const borderWidths = computed(() => ({
-  blockStart: props.borderBlockStartWidth,
-  blockEnd: props.borderBlockEndWidth,
-  inlineStart: props.borderInlineStartWidth,
-  inlineEnd: props.borderInlineEndWidth,
-} as BorderWidth));
-
-const paddings = computed(() => ({
-  blockEnd: props.paddingBlockEnd,
-  inlineStart: props.paddingInlineStart,
-  inlineEnd: props.paddingInlineEnd,
-  blockStart: props.paddingBlockStart,
-} as Spacing));
-
 const style = computed(() => {
   const fullStyle = {
     '--pc-box-color': props.color ? `var(--p-${props.color})` : undefined,
     '--pc-box-background': props.background ? `var(--p-${props.background})` : undefined,
     '--pc-box-border': props.border ? `var(--p-border-${props.border})` : undefined,
-    '--pc-box-border-block-end': borders.value.blockEnd
-      ? `var(--p-border-${borders.value.blockEnd})`
+    '--pc-box-border-block-end': props.borderBlockEnd
+      ? `var(--p-border-${props.borderBlockEnd})`
       : undefined,
-    '--pc-box-border-inline-start': borders.value.inlineStart
-      ? `var(--p-border-${borders.value.inlineStart})`
+    '--pc-box-border-inline-start': props.borderInlineStart
+      ? `var(--p-border-${props.borderInlineStart})`
       : undefined,
-    '--pc-box-border-inline-end': borders.value.inlineEnd
-      ? `var(--p-border-${borders.value.inlineEnd})`
+    '--pc-box-border-inline-end': props.borderInlineEnd
+      ? `var(--p-border-${props.borderInlineEnd})`
       : undefined,
-    '--pc-box-border-block-start': borders.value.blockStart
-      ? `var(--p-border-${borders.value.blockStart})`
+    '--pc-box-border-block-start': props.borderBlockStart
+      ? `var(--p-border-${props.borderBlockStart})`
       : undefined,
     '--pc-box-border-radius': props.borderRadius
       ? `var(--p-border-radius-${props.borderRadius})`
       : undefined,
-    '--pc-box-border-radius-end-start': borderRadiuses.value.endStart
-      ? `var(--p-border-radius-${borderRadiuses.value.endStart})`
+    '--pc-box-border-radius-end-start': props.borderRadiusEndStart
+      ? `var(--p-border-radius-${props.borderRadiusEndStart})`
       : undefined,
-    '--pc-box-border-radius-end-end': borderRadiuses.value.endEnd
-      ? `var(--p-border-radius-${borderRadiuses.value.endEnd})`
+    '--pc-box-border-radius-end-end': props.borderRadiusEndEnd
+      ? `var(--p-border-radius-${props.borderRadiusEndEnd})`
       : undefined,
-    '--pc-box-border-radius-start-start': borderRadiuses.value.startStart
-      ? `var(--p-border-radius-${borderRadiuses.value.startStart})`
+    '--pc-box-border-radius-start-start': props.borderRadiusStartStart
+      ? `var(--p-border-radius-${props.borderRadiusStartStart})`
       : undefined,
-    '--pc-box-border-radius-start-end': borderRadiuses.value.startEnd
-      ? `var(--p-border-radius-${borderRadiuses.value.startEnd})`
+    '--pc-box-border-radius-start-end': props.borderRadiusStartEnd
+      ? `var(--p-border-radius-${props.borderRadiusStartEnd})`
       : undefined,
     '--pc-box-border-width': props.borderWidth
       ? `var(--p-border-width-${props.borderWidth})`
       : undefined,
-    '--pc-box-border-block-start-width': borderWidths.value.blockStart
-      ? `var(--p-border-width-${borderWidths.value.blockStart})`
+    '--pc-box-border-block-start-width': props.borderBlockStartWidth
+      ? `var(--p-border-width-${props.borderBlockStartWidth})`
       : undefined,
-    '--pc-box-border-block-end-width': borderWidths.value.blockEnd
-      ? `var(--p-border-width-${borderWidths.value.blockEnd})`
+    '--pc-box-border-block-end-width': props.borderBlockEndWidth
+      ? `var(--p-border-width-${props.borderBlockEndWidth})`
       : undefined,
-    '--pc-box-border-inline-start-width': borderWidths.value.inlineStart
-      ? `var(--p-border-width-${borderWidths.value.inlineStart})`
+    '--pc-box-border-inline-start-width': props.borderInlineStartWidth
+      ? `var(--p-border-width-${props.borderInlineStartWidth})`
       : undefined,
-    '--pc-box-border-inline-end-width': borderWidths.value.inlineEnd
-      ? `var(--p-border-width-${borderWidths.value.inlineEnd})`
+    '--pc-box-border-inline-end-width': props.borderInlineEndWidth
+      ? `var(--p-border-width-${props.borderInlineEndWidth})`
       : undefined,
     '--pc-box-min-height': props.minHeight,
     '--pc-box-min-width': props.minWidth,
     '--pc-box-max-width': props.maxWidth,
+    '--pc-box-outline': props.outline ? `var(--p-border-${props.outline})` : undefined,
     '--pc-box-overflow-x': props.overflowX,
     '--pc-box-overflow-y': props.overflowY,
-    '--pc-box-padding': props.padding ? `var(--p-space-${props.padding})` : undefined,
-    '--pc-box-padding-block-end': paddings.value.blockEnd
-      ? `var(--p-space-${paddings.value.blockEnd})`
-      : undefined,
-    '--pc-box-padding-inline-start': paddings.value.inlineStart
-      ? `var(--p-space-${paddings.value.inlineStart})`
-      : undefined,
-    '--pc-box-padding-inline-end': paddings.value.inlineEnd
-      ? `var(--p-space-${paddings.value.inlineEnd})`
-      : undefined,
-    '--pc-box-padding-block-start': paddings.value.blockStart
-      ? `var(--p-space-${paddings.value.blockStart})`
-      : undefined,
+    ...getResponsiveProps(
+      'box',
+      'padding-block-end',
+      'space',
+      props.paddingBlockEnd || props.padding as string,
+    ),
+    ...getResponsiveProps(
+      'box',
+      'padding-block-start',
+      'space',
+      props.paddingBlockStart || props.padding as string,
+    ),
+    ...getResponsiveProps(
+      'box',
+      'padding-inline-start',
+      'space',
+      props.paddingInlineStart || props.padding as string,
+    ),
+    ...getResponsiveProps(
+      'box',
+      'padding-inline-end',
+      'space',
+      props.paddingInlineEnd || props.padding as string,
+    ),
     '--pc-box-shadow': props.shadow ? `var(--p-shadow-${props.shadow})` : undefined,
-    '--pc-box-width': props.width,
+    '--pc-box-width': props.width ? props.width : undefined,
+    position: props.position ? props.position : undefined,
+    '--pc-box-inset-block-start': props.insetBlockStart
+      ? `var(--p-space-${props.insetBlockStart})`
+      : undefined,
+    '--pc-box-inset-block-end': props.insetBlockEnd
+      ? `var(--p-space-${props.insetBlockEnd})`
+      : undefined,
+    '--pc-box-inset-inline-start': props.insetInlineStart
+      ? `var(--p-space-${props.insetInlineStart})`
+      : undefined,
+    '--pc-box-inset-inline-end': props.insetInlineEnd
+      ? `var(--p-space-${props.insetInlineEnd})`
+      : undefined,
+    zIndex: props.zIndex ? props.zIndex : undefined,
+    opacity: props.opacity ? props.opacity : undefined,
   };
 
   // Remove all undefined values
@@ -276,7 +298,12 @@ const style = computed(() => {
   }, {} as Record<string, string>);
 });
 
-const className = classNames(styles.Box);
+const className = classNames(
+  styles.Box,
+  props.visuallyHidden && styles.visuallyHidden,
+  props.printHidden && styles.printHidden,
+  props.as === 'ul' && styles.listReset,
+);
 </script>
 
 <style lang="scss">

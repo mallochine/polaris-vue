@@ -1,5 +1,5 @@
 <template lang="pug">
-Card(sectioned)
+AlphaCard
   SettingAction
     template(#action)
       ButtonFrom(
@@ -8,7 +8,7 @@ Card(sectioned)
         :overrides="{ primary: !connected }",
       )
     template(#setting)
-      Stack
+      Inline(gap="4")
         Avatar(
           v-if="connected",
           accessibilityLabel="",
@@ -16,21 +16,27 @@ Card(sectioned)
           :initials="initials",
           :source="avatarUrl",
         )
-        StackItem(fill)
-          div(:class="styles.Content")
-            div(v-if="title || hasSlot(slots.title)")
-              template(v-if="hasSlot(slots.title)")
-                slot(name="title")
-              template(v-else)
-                | {{ title }}
-            div(v-else-if="accountName") {{ accountName }}
-            div(v-if="details || hasSlot(slots.details)")
-              Text(variant="bodyMd", color="subdued", as="span")
-                template(v-if="hasSlot(slots.details)")
-                  slot(name="details")
-                template(v-else)
-                  | {{ details }}
-  div(v-if="termsOfService || hasSlot(slots.termsOfService)", :class="styles.TermsOfService")
+        AlphaStack(gap="2")
+          slot(
+            v-if="hasSlot(slots.title)",
+            name="title",
+          )
+          template(v-else-if="title") {{ title }}
+          template(v-else-if="accountName") {{ accountName }}
+          Text(
+            v-if="details || hasSlot(slots.details)",
+            variant="bodyMd",
+            color="subdued",
+            as="span"
+          )
+            template(v-if="hasSlot(slots.details)")
+              slot(name="details")
+            template(v-else)
+              | {{ details }}
+  Box(
+    v-if="termsOfService || hasSlot(slots.termsOfService)",
+    padding-block-start="5",
+  )
     template(v-if="hasSlot(slots.termsOfService)")
       slot(name="termsOfService")
     template(v-else)
@@ -40,7 +46,7 @@ Card(sectioned)
 import { computed, useSlots } from 'vue';
 import type { Action } from '@/utilities/type';
 import { hasSlot } from '@/utilities/has-slot';
-import { Avatar, ButtonFrom, Card, Stack, StackItem, Text, SettingAction } from '@/components';
+import { AlphaCard, Box, Inline, Text, AlphaStack, Avatar, ButtonFrom, StackItem, SettingAction } from '@/components';
 import styles from '@/classes/AccountConnection.json';
 
 interface AccountConnectionProps {
@@ -76,6 +82,3 @@ const initials = computed(() => {
     : undefined
 });
 </script>
-<style lang="scss">
-@import 'polaris/polaris-react/src/components/AccountConnection/AccountConnection.scss';
-</style>

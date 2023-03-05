@@ -21,6 +21,7 @@ import type {
 } from '@shopify/polaris-tokens';
 import { breakpoints } from '@shopify/polaris-tokens';
 import { Box } from '@/components';
+import type { ResponsiveProp } from '@/utilities/css';
 
 type BackgroundColors =
   | ColorsBackdropTokenAlias
@@ -29,22 +30,27 @@ type BackgroundColors =
   | ColorsActionTokenAlias
   | ColorsSurfaceTokenAlias;
 
+type Spacing = ResponsiveProp<SpacingSpaceScale>;
+
 interface Props {
   /** Background color
    * @default 'surface'
    */
   background?: BackgroundColors;
   /** The spacing around the card
-   * @default '5'
+   * @default {xs: '4', sm: '5'}
+   * @example
+   * padding='4'
+   * padding={{xs: '2', sm: '3', md: '4', lg: '5', xl: '6'}}
    */
-  padding?: SpacingSpaceScale;
+  padding?: Spacing;
   /** Border radius value above a set breakpoint */
   roundedAbove?: BreakpointsAlias;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   background: 'surface',
-  padding: '5',
+  padding: { xs: '4', sm: '5' },
 });
 
 const hasBorderRadius = computed(() => {

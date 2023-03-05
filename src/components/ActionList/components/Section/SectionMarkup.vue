@@ -1,35 +1,36 @@
 <template lang="pug">
-div(:class="className")
-  Box(
-    v-if="section.title",
-    padding-block-start="4",
-    padding-inline-start="4",
-    padding-block-end="2",
-    padding-inline-end="4",
-  )
-    Text(as="p", variant="headingXs") {{ section.title }}
+Box(
+  v-if="section.title",
+  padding-block-start="4",
+  padding-inline-start="4",
+  padding-block-end="2",
+  padding-inline-end="4",
+)
+  Text(as="p", variant="headingXs") {{ section.title }}
 
-  ul(
-    :class="styles.Actions",
-    :role="sectionRole",
-    :tabIndex="!hasMultipleSections ? -1 : undefined"
+Box(
+  as="ul",
+  padding="2",
+  :padding-block-start="hasMultipleSections ? '0' : undefined",
+  :role="sectionRole ? sectionRole : undefined",
+  :tabIndex="!hasMultipleSections ? -1 : undefined"
+)
+  li(
+    v-for="{content, helpText, onAction, ...item}, index in section.items",
+    :key="`${content}-${index}`",
+    :role="actionRole === 'menuitem' ? 'presentation' : undefined",
   )
-    li(
-      v-for="{content, helpText, onAction, ...item}, index in section.items",
-      :key="`${content}-${index}`",
-      :role="actionRole === 'menuitem' ? 'presentation' : undefined",
+    Item(
+      :content="content",
+      :helpText="helpText",
+      :role="actionRole",
+      v-bind="{...item}",
+      @action="handleAction(onAction)",
     )
-      Item(
-        :content="content",
-        :helpText="helpText",
-        :role="actionRole",
-        v-bind="{...item}",
-        @action="handleAction(onAction)",
-      )
-        template(v-if="item.prefixId", #prefix)
-          slot(:name="`prefix-${item.prefixId}`")
-        template(v-if="item.suffixId", #suffix)
-          slot(:name="`suffix-${item.suffixId}`")
+      template(v-if="item.prefixId", #prefix)
+        slot(:name="`prefix-${item.prefixId}`")
+      template(v-if="item.suffixId", #suffix)
+        slot(:name="`suffix-${item.suffixId}`")
 </template>
 
 <script lang="ts">
@@ -40,7 +41,6 @@ export default {
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import styles from '@/classes/ActionList.json';
 import { Box, Text } from '@/components';
 import { Item } from '../Item';
 import type { ActionListItemDescriptor, ActionListSection } from '../../utils';
@@ -58,10 +58,8 @@ const props = defineProps<SectionProps>();
 
 const emit = defineEmits<{ (event: 'action-any-item'): void }>();
 
-const className = computed(() => (props.section.title ? undefined : styles['Section-withoutTitle']));
-
 const sectionRole = computed(() => {
-  let sectionRoleValue;
+  let sectionRoleValue: 'menu' | 'presentation' | undefined;
 
   switch (props.actionRole) {
   case 'option':

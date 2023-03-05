@@ -29,7 +29,3 @@ interface Props {
 
 defineProps<Props>();
 </script>
-
-<style lang="scss">
-@import 'polaris/polaris-react/src/components/Modal/components/Footer/Footer.scss';
-</style>

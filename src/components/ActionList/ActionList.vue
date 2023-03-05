@@ -1,9 +1,8 @@
 <template lang="pug">
-component(
-  :is="element",
+Box(
+  :as="hasMultipleSections ? 'ul' : 'div'",
   ref="actionListRef",
-  :role="elementRole",
-  :class="classNames(styles.ActionList)",
+  :role="hasMultipleSections && actionRole === 'menuitem' ? 'menu' : undefined",
   :tabIndex="elementTabIndex",
 )
   template(v-for="section, index in finalSections")
@@ -13,6 +12,7 @@ component(
       :section="section",
       :hasMultipleSections="hasMultipleSections",
       :actionRole="actionRole",
+      :is-first="index === 0",
       @action-any-item="emit('action-any-item')",
     )
       template(v-for="{prefixId} in section.items" #[`prefix-${prefixId}`])
@@ -40,9 +40,9 @@ export default {
 
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { classNames } from '@/utilities/css';
 import { wrapFocusPreviousFocusableMenuItem, wrapFocusNextFocusableMenuItem } from '@/utilities/focus';
 import { KeypressListener } from '@/components/KeypressListener';
+import { Box } from '@/components';
 import { Key } from '@/components/KeypressListener/utils';
 import styles from '@/classes/ActionList.json';
 import { Section } from './components/Section';
@@ -81,12 +81,6 @@ const finalSections = computed((): readonly ActionListSection[] => {
 
 const hasMultipleSections = computed((): boolean => finalSections.value.length > 1);
 
-const element = computed((): string => (hasMultipleSections.value ? 'ul' : 'div'));
-
-const elementRole = computed((): string | undefined =>
-  hasMultipleSections.value && props.actionRole === 'menuitem' ? 'menu' : undefined,
-);
-
 const elementTabIndex = computed((): number | undefined =>
   hasMultipleSections.value && props.actionRole === 'menuitem' ? -1 : undefined,
 );
@@ -111,6 +105,3 @@ const handleFocusNextItem = (evt: KeyboardEvent) => {
   }
 };
 </script>
-<style lang="scss">
-@import 'polaris/polaris-react/src/components/ActionList/ActionList.scss';
-</style>

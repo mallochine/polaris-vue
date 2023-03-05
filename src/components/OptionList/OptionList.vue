@@ -158,7 +158,4 @@ function testSectionsPropEquality(
   return optionsAreEqual && titlesAreEqual;
 }
 </script>
-<style lang="scss">
-@import 'polaris/polaris-react/src/components/OptionList/OptionList.scss';
-</style>
 

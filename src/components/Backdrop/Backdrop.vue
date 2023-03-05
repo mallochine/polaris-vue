@@ -2,10 +2,9 @@
 ScrollLock
 div(
   :class="className",
-  @click="emits('click')",
+  @click="handleClick",
   @touchstart="emits('touchstart')",
   @mousedown="handleMouseDown",
-  @mouseup="handleMouseUp",
 )
 </template>
 
@@ -44,7 +43,7 @@ const handleMouseDown = () => {
   emits('closing', true);
 };
 
-const handleMouseUp = () => {
+const handleClick = () => {
   isClosing.value = false;
   emits('closing', false);
   emits('click');

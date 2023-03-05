@@ -37,7 +37,3 @@ const className = computed(() => {
     : styles.Header;
 });
 </script>
-
-<style lang="scss">
-@import 'polaris/polaris-react/src/components/Modal/components/Header/Header.scss';
-</style>

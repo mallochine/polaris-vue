@@ -8,7 +8,7 @@ component(
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed } from 'vue';
 import type {
   SpacingSpaceScale,
 } from '@shopify/polaris-tokens';
@@ -21,41 +21,51 @@ type Align = 'start' | 'end' | 'center';
 
 type Element = 'div' | 'ul' | 'ol' | 'fieldset';
 
-type Spacing = ResponsiveProp<SpacingSpaceScale>;
+type Gap = ResponsiveProp<SpacingSpaceScale>;
 
 interface Props {
   /** HTML Element type
    * @default 'div'
    */
   as?: Element;
-  /** The vertical alignment of elements
+  /** Horizontal alignment of children
    * @default 'start'
    */
   align?: Align;
-  /** Toggle elements to be full width */
-  fullWidth?: boolean;
-  /** The spacing between elements
-   * @default '4'
+  /** Toggle children to be full width
+   * @default false
    */
-  spacing?: Spacing;
+   fullWidth?: boolean;
+  /** The spacing between children */
+  gap?: Gap;
+  /** HTML id attribute */
+  id?: string;
+  /** Reverse the render order of child items
+   * @default false
+   */
+  reverseOrder?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   as: 'div',
   align: 'start',
   spacing: '4',
+  fullWidth: false,
+  reverseOrder: false,
 });
 
 const className = computed(() => classNames(
   styles.AlphaStack,
   props.fullWidth && styles.fullWidth,
   props.as === 'ul' && styles.listReset,
+  props.as === 'fieldset' && styles.fieldsetReset,
 ));
 
 const style = computed(() => {
   return {
     '--pc-stack-align': props.align ? `${props.align}` : '',
-    ...getResponsiveProps('stack', 'spacing', 'space', props.spacing),
+    '--pc-stack-order': props.reverseOrder ? 'column-reverse' : 'column',
+    ...getResponsiveProps('stack', 'gap', 'space', props.gap),
   };
 });
 </script>

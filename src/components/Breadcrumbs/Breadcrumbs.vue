@@ -32,13 +32,20 @@ import type { CallbackAction, LinkAction } from '@/utilities/type';
 import { Text, Icon, UnstyledLink } from '@/components';
 
 interface BreadcrumbsProps {
-  /** Collection of breadcrumbs */
-  breadcrumbs: (CallbackAction | LinkAction)[];
+  /** @deprecated Collection of breadcrumbs */
+  breadcrumbs?: (CallbackAction | LinkAction) | (CallbackAction | LinkAction)[];
+  /** Back action link */
+  backAction?: CallbackAction | LinkAction;
 }
 
 const props = defineProps<BreadcrumbsProps>();
 
-const breadcrumb = ref(props.breadcrumbs[props.breadcrumbs.length - 1]);
+const breadcrumb = computed(() => {
+  return props.backAction ??
+  (Array.isArray(props.breadcrumbs)
+    ? props.breadcrumbs[props.breadcrumbs.length - 1]
+    : props.breadcrumbs);
+});
 
 const linkUrl = computed(() => {
   const { url } = breadcrumb.value as LinkAction;

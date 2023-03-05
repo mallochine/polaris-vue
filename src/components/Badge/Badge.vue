@@ -10,7 +10,12 @@ span(:class="className")
     Text(variant="bodySm", as="span", visually-hidden) {{ accessibilityLabel }}
   span(v-if="icon", :class="styles.Icon")
     Icon(:source="icon")
-  Text(v-if="$slots.default", as="span", variant="bodySm")
+  Text(
+    v-if="$slots.default",
+    as="span",
+    variant="bodySm",
+    :font-weight="status === 'new' ? 'medium' : undefined",
+  )
     slot
 </template>
 

@@ -1,5 +1,11 @@
 <template lang="pug">
-li(v-if="hasMultipleSections", :class="styles.Section", role="presentation")
+Box(
+  v-if="hasMultipleSections",
+  as="li",
+  role="presentation",
+  :border-block-start="!isFirst ? 'divider' : undefined",
+  :padding-block-start="!section.title ? '2' : undefined",
+)
   SectionMarkup(
     v-bind="sectionMarkupProps",
     @action-any-item="emit('action-any-item')",
@@ -27,7 +33,6 @@ export default {
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import styles from '@/classes/ActionList.json';
 import SectionMarkup from './SectionMarkup.vue';
 import type { ActionListSection } from '../../utils';
 
@@ -38,6 +43,8 @@ interface SectionProps {
   hasMultipleSections: boolean;
   /** Defines a specific role attribute for each action in the list */
   actionRole?: 'option' | 'menuitem' | string;
+  /** Whether it is the first in a group of sections */
+  isFirst?: boolean;
 }
 
 const props = defineProps<SectionProps>();

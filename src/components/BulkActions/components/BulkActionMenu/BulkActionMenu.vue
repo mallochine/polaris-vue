@@ -9,6 +9,7 @@ Popover(
       :disclosure="true",
       :content="title",
       :indicator="isNewBadgeInBadgeActions",
+      show-content-in-button,
       @action="toggleMenuVisibility",
     )
   template(#content)

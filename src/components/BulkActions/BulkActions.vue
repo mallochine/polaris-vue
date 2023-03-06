@@ -1,111 +1,41 @@
 <template lang="pug">
-div(
-  ref="containerNode",
-  v-if="selectMode",
-)
+div(ref="containerNode")
   div(
-    v-if="smallScreen",
-    :class="smallScreenGroupClassName",
-    ref="smallScreenGroupNode",
-  )
-    div(:class="styles.ButtonGroupWrapper")
-      ButtonGroup(
-        segmented,
-        no-item-wrap
-      )
-        ButtonGroupItem
-          transition(
-            name="custom-bulkactions-transition",
-            appear,
-            :class="styles.Slide",
-            @before-enter="onTransitionBeforeEnter",
-            @enter="onTransitionEnter",
-            @after-enter="onTransitionAfterEnter",
-          )
-            div(
-              :class="styles.CheckableContainer",
-              ref="checkableWrapperNode",
-            )
-              CheckableButton(v-bind="checkableButtonProps", @toggle-all="emits('toggle-all')", smallScreen)
-        ButtonGroupItem(
-          v-if="actionSections || rolledInPromotedActions.length > 0 || measuring",
-          ref="moreActionsNode",
-        )
-          Popover(
-            :active="smallScreenPopoverVisible && selectMode",
-            @close="toggleSmallScreenPopover",
-          )
-            template(#activator)
-              BulkActionButton(
-                disclosure,
-                :content="i18n.translate('Polaris.ResourceList.BulkActions.actionsActivatorLabel')",
-                :disabled="disabled",
-                :indicator="isNewBadgeInBadgeActions",
-                @action="toggleSmallScreenPopover",
-              )
-            template(#content)
-              ActionList(
-                :items="promotedActions",
-                :sections="actionSections",
-                @action-any-item="toggleSmallScreenPopover",
-              )
-        ButtonGroupItem
-          Button(
-            :disabled="disabled",
-            @click="setSelectMode(false)",
-          )
-            | {{ i18n.translate('Polaris.Common.cancel') }}
-    div(
-      v-if="paginatedSelectAllAction",
-      :class="styles.PaginatedSelectAll"
-    )
-      span(v-if="paginatedSelectAllText && paginatedSelectAllAction", aria-live="polite") {{ paginatedSelectAllText }}&nbsp;
-      template(v-else) {{ paginatedSelectAllText }}
-      Button(
-        v-if="paginatedSelectAllAction && paginatedSelectAllAction.onAction",
-        plain,
-        :disabled="disabled",
-        @click="paginatedSelectAllAction?.onAction",
-      ) {{ paginatedSelectAllAction.content }}
-
-  div(
-    v-else,
-    :class="largeScreenGroupClassName",
-    ref="largeScreenGroupNode",
+    :class="groupClassName",
+    ref="groupNode",
+    :style="{width: `${width}px`}",
   )
     EventListener(event="resize", :handler="handleResize")
     div(
       :class="styles.ButtonGroupWrapper",
-      ref="largeScreenButtonsNode",
+      ref="buttonsNode",
     )
-      ButtonGroup(
-        v-if="(promotedActions && numberOfPromotedActionsToRender > 0) || hasActionsPopover",
-        segmented,
-        no-item-wrap,
-      )
-        ButtonGroupItem
-          CheckableButton(v-bind="checkableButtonProps", @toggle-all="emits('toggle-all')")
-        ButtonGroupItem(
-          v-if="promotedActions && numberOfPromotedActionsToRender > 0"
-          v-for="action, index in promotedActions.slice(0, numberOfPromotedActionsToRender)",
-          :key="index",
+      div
+        Inline(
+          v-if="(promotedActions && numberOfPromotedActionsToRender > 0) || hasActionsPopover",
+          gap="3",
         )
-          BulkActionMenu(
-            v-if="instanceOfMenuGroupDescriptor(action)",
-            v-bind="bulkActionPropsGenerate(action)",
-            :isNewBadgeInBadgeActions="isNewBadgeInBadgeActions",
+          template(
+            v-if="promotedActions && numberOfPromotedActionsToRender > 0"
+            v-for="action, index in promotedActions.slice(0, numberOfPromotedActionsToRender)",
+            :key="index",
           )
-          BulkActionButton(
-            v-else,
-            :disabled="disabled",
-            v-bind="action",
-            :handleMeasurement="handleMeasurement",
-          )
-        ButtonGroupItem(v-if="hasActionsPopover")
-          div(ref="moreActionsNode")
+            BulkActionMenu(
+              v-if="instanceOfMenuGroupDescriptor(action)",
+              v-bind="bulkActionPropsGenerate(action)",
+              :isNewBadgeInBadgeActions="isNewBadgeInBadgeActions",
+            )
+            BulkActionButton(
+              v-else,
+              :disabled="disabled",
+              v-bind="action",
+              @handle-measurement="handleMeasurement",
+            )
+          div(v-if="hasActionsPopover", ref="moreActionsNode")
             Popover(
-              :active="largeScreenPopoverVisible && selectMode",
-              @close="toggleLargeScreenPopover",
+              :active="popoverVisible",
+              preferred-alignment="right",
+              @close="togglePopover",
             )
               template(#activator)
                 BulkActionButton(
@@ -113,62 +43,43 @@ div(
                   :content="activatorLabel",
                   :disabled="disabled",
                   :indicator="isNewBadgeInBadgeActions",
-                  @action="toggleLargeScreenPopover",
+                  :show-content-in-button="!(promotedActions && numberOfPromotedActionsToRender > 0)",
+                  @action="togglePopover",
                 )
               template(#content)
                 ActionList(
                   :sections="combinedActions",
-                  @action-any-item="toggleLargeScreenPopover",
+                  @action-any-item="togglePopover",
                 )
-      CheckableButton(v-else, v-bind="checkableButtonProps", @toggle-all="emits('toggle-all')")
-    div(
-      v-if="paginatedSelectAllAction",
-      :class="styles.PaginatedSelectAll"
-    )
-      span(v-if="paginatedSelectAllText && paginatedSelectAllAction", aria-live="polite") {{ paginatedSelectAllText }}&nbsp;
-      template(v-else) {{ paginatedSelectAllText }}
-      Button(
-        v-if="paginatedSelectAllAction && paginatedSelectAllAction.onAction",
-        plain,
-        :disabled="disabled",
-        @click="paginatedSelectAllAction?.onAction",
-      ) {{ paginatedSelectAllAction.content }}
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue';
 import { debounce } from 'polaris/polaris-react/src/utilities/debounce';
-import { classNames } from '@/utilities/css';
 import { clamp } from 'polaris/polaris-react/src/utilities/clamp';
+import { classNames } from '@/utilities/css';
 import type { MenuGroupDescriptor } from '@/components/ActionMenu/components/MenuGroup/utils';
-import type { Action } from '@/utilities/type';
 import { UseI18n } from '@/use';
 import styles from '@/classes/BulkActions.json';
-import { ActionList, Popover, Button, ButtonGroup, ButtonGroupItem, CheckableButton, EventListener } from '@/components';
+import { ActionList, Popover, ButtonGroupItem, Inline, EventListener } from '@/components';
 import { BulkActionButton, BulkActionMenu } from './components';
 import type { BulkAction, BulkActionListSection } from './utils';
 
+const BUTTONS_NODE_ADDITIONAL_WIDTH = 64;
+
 interface BulkActionsProps {
-  /** Visually hidden text for screen readers */
-  accessibilityLabel?: string;
-  /** Whether to render the small screen BulkActions or not */
-  smallScreen?: boolean;
-  /** Label for the bulk actions */
-  label?: string;
-  /** State of the bulk actions checkbox */
-  selected?: boolean | 'indeterminate';
   /** List is in a selectable state */
   selectMode?: boolean;
   /** Actions that will be given more prominence */
   promotedActions?: (BulkAction | MenuGroupDescriptor)[];
   /** List of actions */
   actions?: (BulkAction | BulkActionListSection)[];
-  /** Text to select all across pages */
-  paginatedSelectAllText?: string;
-  /** Action for selecting all across pages */
-  paginatedSelectAllAction?: Action;
   /** Disables bulk actions */
   disabled?: boolean;
+  /** If the BulkActions is currently sticky in view */
+  isSticky?: boolean;
+  /** The width of the BulkActions */
+  width: number;
 }
 
 const props = defineProps<BulkActionsProps>();
@@ -176,25 +87,18 @@ const props = defineProps<BulkActionsProps>();
 const i18n = UseI18n();
 
 const emits = defineEmits<{
-  /** Callback when the select all checkbox is clicked */
-  (e: 'toggle-all'): void;
-  /** Callback when selectable state of list is changed */
-  (e: 'select-mode-toggle', selectMode: boolean): void;
   /** Callback when more actions button is toggled */
   (e: 'more-action-popover-toggle', isOpen: boolean): void;
 }>();
 
-const smallScreenPopoverVisible = ref<boolean>(false);
-const largeScreenPopoverVisible = ref<boolean>(false);
+const popoverVisible = ref<boolean>(false);
 const containerWidth = ref<number>(0);
 const measuring = ref<boolean>(true);
 
 const containerNode = ref<HTMLElement | null>(null);
-const largeScreenButtonsNode = ref<HTMLElement | null>(null);
+const buttonsNode = ref<HTMLElement | null>(null);
 const moreActionsNode = ref<HTMLElement | null>(null);
-const checkableWrapperNode = ref<HTMLDivElement | null>(null);
-const largeScreenGroupNode = ref<HTMLDivElement | null>(null);
-const smallScreenGroupNode = ref<HTMLDivElement | null>(null);
+const groupNode = ref<HTMLDivElement | null>(null);
 
 const promotedActionsWidths = ref<number[]>([]);
 const bulkActionsWidth = ref(0);
@@ -209,9 +113,8 @@ const handleResize = debounce(
       }
     }
 
-    if (smallScreenPopoverVisible.value || largeScreenPopoverVisible.value) {
-      smallScreenPopoverVisible.value = false;
-      largeScreenPopoverVisible.value = false;
+    if (popoverVisible.value) {
+      popoverVisible.value = false;
     }
   },
   50,
@@ -223,7 +126,15 @@ const numberOfPromotedActionsToRender = computed<number>(() => {
     return 0;
   }
 
-  if (containerWidth.value >= bulkActionsWidth.value || measuring.value) {
+  const containerWidthMinusAdditionalWidth = Math.max(
+    0,
+    containerWidth.value - BUTTONS_NODE_ADDITIONAL_WIDTH,
+  );
+
+  if (
+    containerWidthMinusAdditionalWidth >= bulkActionsWidth.value ||
+    measuring
+  ) {
     return props.promotedActions.length;
   }
 
@@ -237,7 +148,7 @@ const numberOfPromotedActionsToRender = computed<number>(() => {
       bulkActionsWidth.value -
       totalWidth +
       addedMoreActionsWidthForMeasuring.value;
-    if (containerWidth.value >= widthWithRemovedAction) {
+    if (containerWidthMinusAdditionalWidth >= widthWithRemovedAction) {
       sufficientSpace = true;
     } else {
       counter--;
@@ -264,17 +175,6 @@ const actionSectionsHandler = (): BulkActionListSection[] | undefined => {
 };
 
 const actionSections = computed(actionSectionsHandler);
-
-const checkableButtonProps = computed(() => {
-  return {
-    accessibilityLabel: props.accessibilityLabel,
-    label: props.label,
-    selected: props.selected,
-    selectMode: props.selectMode,
-    measuring: measuring.value,
-    disabled: props.disabled,
-  };
-});
 
 const rolledInPromotedActions = computed(() => {
   const number = numberOfPromotedActionsToRender.value;
@@ -328,16 +228,10 @@ const combinedActions = computed(() => {
   return [];
 });
 
-const smallScreenGroupClassName = computed(() => classNames(
+const groupClassName = computed(() => classNames(
   styles.Group,
-  styles['Group-smallScreen'],
-  styles['Group-entered'],
-));
-
-const largeScreenGroupClassName = computed(() => classNames(
-  styles.Group,
-  styles['Group-largeScreen'],
-  !measuring.value && styles['Group-entered'],
+  !props.isSticky && styles['Group-not-sticky'],
+  !measuring.value && props.isSticky && styles[`Group-${status}`],
   measuring.value && styles['Group-measuring'],
 ));
 
@@ -358,8 +252,8 @@ const initialRenderer = () => {
         moreActionsNode.value.getBoundingClientRect().width;
     }
 
-    bulkActionsWidth.value = largeScreenButtonsNode.value
-      ? largeScreenButtonsNode.value.getBoundingClientRect().width -
+    bulkActionsWidth.value = buttonsNode.value
+      ? buttonsNode.value.getBoundingClientRect().width -
         addedMoreActionsWidthForMeasuring.value
       : 0;
 
@@ -379,43 +273,19 @@ watch(
   initialRenderer,
 );
 
-const onTransitionBeforeEnter = (el: Element) => {
-  el.classList.add(styles['Slide-enter']);
-};
-
-const onTransitionEnter = (el: Element, done) => {
-  setTimeout(() => {
-    el.classList.add(styles['Slide-entering']);
-    done();
-  }, 1);
-};
-
-const onTransitionAfterEnter = (el: Element) => {
-  el.classList.remove(styles['Slide-enter'], styles['Slide-entering']);
-}
-
-const toggleSmallScreenPopover = () => {
-  emits('more-action-popover-toggle', smallScreenPopoverVisible.value);
-  smallScreenPopoverVisible.value = !smallScreenPopoverVisible.value;
-};
-
-const toggleLargeScreenPopover = () => {
-  emits('more-action-popover-toggle', largeScreenPopoverVisible.value);
-  largeScreenPopoverVisible.value = !largeScreenPopoverVisible.value;
-};
-
 const handleMeasurement = (width: number) => {
   if (measuring.value) {
     promotedActionsWidths.value.push(width);
   }
 };
 
-const setSelectMode = (val: boolean) => {
-  emits('select-mode-toggle', val);
-};
-
 const bulkActionPropsGenerate = (action: MenuGroupDescriptor | BulkAction) => {
   return action as MenuGroupDescriptor;
+};
+
+const togglePopover = () => {
+  emits('more-action-popover-toggle', popoverVisible.value);
+  popoverVisible.value = !popoverVisible.value;
 };
 
 // Common functions

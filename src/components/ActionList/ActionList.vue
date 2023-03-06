@@ -105,3 +105,6 @@ const handleFocusNextItem = (evt: KeyboardEvent) => {
   }
 };
 </script>
+<style lang="scss">
+@import 'polaris/polaris-react/src/components/ActionList/ActionList.scss';
+</style>

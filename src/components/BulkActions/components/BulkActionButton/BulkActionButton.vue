@@ -3,19 +3,21 @@ div(:class="styles.BulkActionButton", ref="bulkActionButton")
   Button(
     :external="external",
     :url="url",
-    :aria-label="accessibilityLabel",
+    :accessibilityLabel="disclosure && !showContentInButton ? content : accessibilityLabel",
+    :disclosure="disclosure && showContentInButton",
     :disabled="disabled",
-    :disclosure="disclosure",
+    size="slim",
+    :icon="disclosure && !showContentInButton ? HorizontalDotsMinor : undefined",
     @click="emits('action')",
   )
-    | {{ content }}
+    | {{ buttonContent }}
   Indicator(v-if="indicator")
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
-import type { DisableableAction } from '@/utilities/interface';
-import { Button, Indicator } from '@/components';
+import { computed, onMounted, ref } from 'vue';
+import { Button, Indicator, Icon } from '@/components';
+import HorizontalDotsMinor from '@icons/HorizontalDotsMinor.svg';
 import styles from '@/classes/BulkActions.json';
 
 interface BulkActionButtonProps {
@@ -26,15 +28,21 @@ interface BulkActionButtonProps {
   content?: string;
   accessibilityLabel?: string;
   disabled?: boolean;
+  showContentInButton?: boolean;
 }
 
 const props = defineProps<BulkActionButtonProps>();
+
 const emits = defineEmits<{
   (e: 'handle-measurement', width: number): void;
   (e: 'action'): void;
 }>();
 
 const bulkActionButton = ref<HTMLDivElement | null>(null);
+
+const buttonContent = computed(() => {
+  return props.disclosure && !props.showContentInButton ? undefined : props.content;
+});
 
 onMounted(() => {
   if (bulkActionButton.value) {

@@ -1,5 +1,5 @@
 <template lang="pug">
-Card
+AlphaCard
   div(:class="containerClassName")
     div(v-if="attrs.onDismiss", :class="styles.Dismiss")
       Button(
@@ -40,7 +40,7 @@ import { computed, useAttrs, useSlots } from 'vue';
 import { classNames } from '@/utilities/css';
 import type { Action } from '@/utilities/type';
 import {
-  Card,
+  AlphaCard,
   TextContainer,
   ButtonGroup,
   Button,

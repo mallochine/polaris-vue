@@ -4,6 +4,7 @@ div(
   :data-buttongroup-segmented="segmented",
   :data-buttongroup-connected-top="connectedTop",
   :data-buttongroup-full-width="fullWidth",
+  :data-buttongroup-no-wrap="noWrap",
 )
   Item(
     v-if="!noItemWrap",
@@ -41,6 +42,8 @@ interface Props {
   connectedTop?: boolean;
   /** No wrap all stack elements with ButtonGroupItem  */
   noItemWrap?: boolean;
+  /** Prevent buttons in button group from wrapping to next line */
+  noWrap?: boolean;
 }
 
 const props = defineProps<Props>();
@@ -65,6 +68,7 @@ const className = computed(() => {
     props.spacing && styles[props.spacing],
     props.segmented && styles.segmented,
     props.fullWidth && styles.fullWidth,
+    props.noWrap && styles.noWrap,
   );
 })
 </script>
